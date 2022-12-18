@@ -1,0 +1,15 @@
+name: Deploy
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    name: Deploy
+    uses: Flaminel/umbrella-workflows-test/.github/workflows/chart.install.yml@main
+    with:
+      githubContext: ${{ toJSON(github) }}
+    secrets:
+      SECRETS_TOKEN: ${{ secrets.SECRETS_TOKEN }}
