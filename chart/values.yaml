@@ -1,0 +1,85 @@
+statefulSet:
+  serviceName: service
+  serviceAccountName: service-account
+  replicas: 1
+  containers:
+    -
+      name: mysql
+      image:
+        repository: mysql
+        tag: "8"
+      ports:
+        -
+          name: mysql
+          containerPort: 3306
+      readinessProbe:
+        exec:
+          command:
+            - /bin/sh
+            - -c
+            - mysql -u root --password=$MYSQL_ROOT_PASSWORD -e "grant all privileges on *.* to '$MySQLUser'@'%';"
+        initialDelaySeconds: 30
+        periodSeconds: 10
+        timeoutSeconds: 2
+        failureThreshold: 5
+      resources:
+        requests:
+          cpu: 200m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+      envFromSecret:
+        -
+          secretName: auth-secret
+          envs:
+            - 
+              name: MYSQL_ROOT_PASSWORD
+              key: rootPassword
+            - 
+              name: MYSQL_USER
+              key: user
+            - 
+              name: MYSQL_PASSWORD
+              key: password
+      volumeMounts:
+        -
+          name: storage
+          mountPath: /var/lib/mysql
+          subPath: mysql
+  volumes:
+    -
+      name: storage
+      type: pvc
+      typeName: storage-pvc
+
+pvcs:
+  -
+    name: storage-pvc
+    storageClassName: local-path
+    accessModes:
+      - ReadWriteMany
+    size: 1Gi
+    volumeMode: Filesystem
+
+secrets:
+  -
+    name: auth-secret
+    type: Opaque
+    data:
+      rootPassword: $MySQLRootPassword
+      user: $MySQLUser
+      password: $MySQLPassword
+
+serviceAccount:
+  name: service-account
+
+services:
+  -
+    name: service
+    type: ClusterIP
+    ports:
+      -
+        name: mysql
+        protocol: TCP
+        port: 3306
