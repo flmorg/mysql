@@ -17,7 +17,7 @@ statefulSet:
           command:
             - /bin/sh
             - -c
-            - mysql -u root --password=$MYSQL_ROOT_PASSWORD -e "grant all privileges on *.* to '$MySQLUser'@'%';"
+            - mysql -u root --password=$MYSQL_ROOT_PASSWORD -e "grant all privileges on *.* to '$MYSQL_USER'@'%';FLUSH PRIVILEGES;"
         initialDelaySeconds: 30
         periodSeconds: 10
         timeoutSeconds: 2
@@ -35,13 +35,13 @@ statefulSet:
           envs:
             - 
               name: MYSQL_ROOT_PASSWORD
-              key: rootPassword
+              key: ROOT_PASSWORD
             - 
               name: MYSQL_USER
-              key: user
+              key: USERNAME
             - 
               name: MYSQL_PASSWORD
-              key: password
+              key: PASSWORD
       volumeMounts:
         -
           name: storage
@@ -53,6 +53,13 @@ statefulSet:
       type: pvc
       typeName: storage-pvc
 
+infisicalSecrets:
+  -
+    name: infisical-auth-secret
+    serviceTokenSecretName: service-token
+    secretsPath: /mysql
+    secretName: auth-secret
+
 pvcs:
   -
     name: storage-pvc
@@ -61,15 +68,6 @@ pvcs:
       - ReadWriteMany
     size: 1Gi
     volumeMode: Filesystem
-
-secrets:
-  -
-    name: auth-secret
-    type: Opaque
-    data:
-      rootPassword: $MySQLRootPassword
-      user: $MySQLUser
-      password: $MySQLPassword
 
 serviceAccount:
   name: service-account
